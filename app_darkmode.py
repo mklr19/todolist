@@ -88,11 +88,9 @@ class TaskManagerApp:
         self.username = username  
         self.task_manager = TaskManager(self.username)
         self.root = tk.Tk()
-        self.root.title("To-Do-List")
-
+        self.root.title("To-Do-Maker")
+        
         self.root.tk.call('source', 'forest-dark.tcl')
-
-        # Set the theme with the theme_use method
         ttk.Style().theme_use('forest-dark')
 
         left_frame  =  ttk.LabelFrame(self.root,  width=300,  height=600)
@@ -123,12 +121,12 @@ class TaskManagerApp:
         
 
         self.tasks_treeview = ttk.Treeview(self.root, columns=("Task", "Priority", "Status", "Category"))
-        self.tasks_treeview.pack(expand=True, fill="both")
+        self.tasks_treeview.column("#0", width=0, stretch=tk.NO)
         self.tasks_treeview.heading("#1", text="Task")
         self.tasks_treeview.heading("#2", text="Priority")
         self.tasks_treeview.heading("#3", text="Status")
         self.tasks_treeview.heading("#4", text="Category")  
-        
+        self.tasks_treeview.pack()
 
         self.add_task_button = ttk.Button(left_frame, text='Add task', command=self.show_add_task_window)
         self.add_task_button.pack(padx=3, pady= 3, fill="x")
@@ -146,8 +144,8 @@ class TaskManagerApp:
         self.change_task_name_button.pack(padx=3, pady= 3, fill="x")
         self.change_category_button = ttk.Button(left_frame, text='Change category', command=self.change_category)
         self.change_category_button.pack(padx=3, pady= 3, fill="x")
-        self.tasks_treeview.tag_configure('finished', background='#0a240c')  # Helles Grün
-        self.tasks_treeview.tag_configure('unfinished', background='#371111')  # Helles Rot
+        self.tasks_treeview.tag_configure('finished', background='#00FF00')  # Helles Grün
+        self.tasks_treeview.tag_configure('unfinished', background='#FF6666')  # Helles Rot
         self.tasks_treeview.pack(fill=tk.BOTH, expand=True)
        
         
@@ -176,16 +174,19 @@ class TaskManagerApp:
             self.refresh_tasks_treeview()
             window.destroy()    
 
-    def change_task_priority(self):  
-        selected_task_id = self.tasks_treeview.selection()[0]
-        if selected_task_id:
-            task_name = self.tasks_treeview.item(selected_task_id)["values"][0]
-            new_priority = self.show_priority_dialog()
-            if new_priority:
-                for task in self.task_manager.tasks:
-                    if task.name == task_name:
-                        task.set_priority(new_priority)
-                self.refresh_tasks_treeview()
+    def change_task_priority(self):
+        selected_task = self.tasks_treeview.selection()
+        if not selected_task:
+            messagebox.showinfo("Information", "Please select a task to change its priority.")
+            return
+
+        task_name = self.tasks_treeview.item(selected_task)["values"][0]
+        new_priority = self.show_priority_dialog()
+        if new_priority:
+            for task in self.task_manager.tasks:
+                if task.name == task_name:
+                    task.set_priority(new_priority)
+            self.refresh_tasks_treeview()
 
     def show_priority_dialog(self):
         priority_dialog = tk.Toplevel(self.root)
@@ -206,18 +207,24 @@ class TaskManagerApp:
         return priority_dialog.result
 
     def delete_task(self):
-        selected_task = self.tasks_treeview.selection()[0]  
-        if selected_task:
-            task_name = self.tasks_treeview.item(selected_task)["values"][0]
-            self.task_manager.delete_task(task_name)
-            self.refresh_tasks_treeview()  
+        selected_task = self.tasks_treeview.selection()
+        if not selected_task:
+            messagebox.showinfo("Information", "Please select a task to delete.")
+            return
+
+        task_name = self.tasks_treeview.item(selected_task)["values"][0]
+        self.task_manager.delete_task(task_name)
+        self.refresh_tasks_treeview() 
 
     def mark_task_as_done(self):
-        selected_task = self.tasks_treeview.selection()[0]
-        if selected_task:
-            task_name = self.tasks_treeview.item(selected_task)["values"][0]
-            self.task_manager.mark_task_as_done(task_name)
-            self.refresh_tasks_treeview()  
+        selected_task = self.tasks_treeview.selection()
+        if not selected_task:
+            messagebox.showinfo("Information", "Please select a task to mark it as done.")
+            return
+
+        task_name = self.tasks_treeview.item(selected_task)["values"][0]
+        self.task_manager.mark_task_as_done(task_name)
+        self.refresh_tasks_treeview()
 
 
     def refresh_tasks_treeview(self):  
@@ -237,15 +244,19 @@ class TaskManagerApp:
         self.root.mainloop()
         
     def sort_by_task(self, tv, col, reverse):
+        self.reset_heading_text(tv)
         task_list = [(tv.set(k, col), k) for k in tv.get_children('')]
         task_list.sort(reverse=reverse)
 
         for index, (val, k) in enumerate(task_list):
             tv.move(k, '', index)
 
-        tv.heading(col, command=lambda: self.sort_by_task(tv, col, not reverse))
+        arrow = " ↓" if reverse else " ↑"
+        tv.heading(col, text=f"Task{arrow}", command=lambda: self.sort_by_task(tv, col, not reverse))
+        
         
     def sort_by_priority(self, tv, col, reverse):
+        self.reset_heading_text(tv)
         priority_map = {'low': 1, 'medium': 2, 'high': 3}
         task_list = [(tv.set(k, col), k) for k in tv.get_children('')]
         
@@ -253,59 +264,82 @@ class TaskManagerApp:
     
         for index, (val, k) in enumerate(task_list):
             tv.move(k, '', index)
-    
-        tv.heading(col, command=lambda: self.sort_by_priority(tv, col, not reverse))
+        
+        arrow = " ↓" if reverse else " ↑"
+        tv.heading(col, text=f"Priority{arrow}", command=lambda: self.sort_by_priority(tv, col, not reverse))
+
+       
         
     def sort_by_status(self, tv, col, reverse):
+        self.reset_heading_text(tv)
         status_map = {'finished': 1, 'unfinished': 0}
         task_list = [(tv.set(k, col), k) for k in tv.get_children('')]
         task_list.sort(key=lambda x: status_map.get(x[0].lower(), 0), reverse=reverse)
     
         for index, (val, k) in enumerate(task_list):
             tv.move(k, '', index)
-    
-        tv.heading(col, command=lambda: self.sort_by_status(tv, col, not reverse))
+
+        arrow = " ↓" if reverse else " ↑"
+        tv.heading(col, text=f"Status{arrow}", command=lambda: self.sort_by_status(tv, col, not reverse))
+
         
     def change_task_name(self):
-        selected_task_id = self.tasks_treeview.selection()[0]
-        if selected_task_id:
-            task_name = self.tasks_treeview.item(selected_task_id)["values"][0]
-            new_name = simpledialog.askstring('Change task name', 'New task name:')
-            if new_name:
-                for task in self.task_manager.tasks:
-                    if task.name == task_name:
-                        task.name = new_name
-                self.refresh_tasks_treeview()
-                self.task_manager.save_tasks()
+        selected_task = self.tasks_treeview.selection()
+        if not selected_task:
+            messagebox.showinfo("Information", "Please select a task to change its name.")
+            return
+
+        task_name = self.tasks_treeview.item(selected_task)["values"][0]
+        new_name = simpledialog.askstring('Change task name', 'New task name:')
+        if new_name:
+            for task in self.task_manager.tasks:
+                if task.name == task_name:
+                    task.name = new_name
+            self.refresh_tasks_treeview()
+            self.task_manager.save_tasks()
                 
     def sort_by_category(self, tv, col, reverse):
+        self.reset_heading_text(tv)
         task_list = [(tv.set(k, col), k) for k in tv.get_children('')]
         task_list.sort(reverse=reverse)
     
         for index, (val, k) in enumerate(task_list):
             tv.move(k, '', index)
+
+        arrow = " ↓" if reverse else " ↑"
+        tv.heading(col, text=f"Category{arrow}", command=lambda: self.sort_by_category(tv, col, not reverse))
     
-        tv.heading(col, command=lambda: self.sort_by_category(tv, col, not reverse))
-                
+    def reset_heading_text(self, tv):
+        for col in ["Task", "Priority", "Status", "Category"]:
+            tv.heading(col, text=col)   
+
     def unfinish_task(self):
-        selected_task_id = self.tasks_treeview.selection()[0]
-        if selected_task_id:
-            task_name = self.tasks_treeview.item(selected_task_id)["values"][0]
-            for task in self.task_manager.tasks:
-                if task.name == task_name:
-                    task.status = 'unfinished'
-            self.refresh_tasks_treeview()
-            self.task_manager.save_tasks()
+        selected_task = self.tasks_treeview.selection()
+        if not selected_task:
+            messagebox.showinfo("Information", "Please select a task to mark it as undone.")
+            return
+
+        task_name = self.tasks_treeview.item(selected_task)["values"][0]
+        for task in self.task_manager.tasks:
+            if task.name == task_name:
+                task.status = 'unfinished'
+        self.refresh_tasks_treeview()
+        self.task_manager.save_tasks()
             
+
     def delete_category(self):
-        selected_task_id = self.tasks_treeview.selection()[0]
-        if selected_task_id:
-            task_name = self.tasks_treeview.item(selected_task_id)["values"][0]
-            for task in self.task_manager.tasks:
-                if task.name == task_name:
-                    task.category = "Default"  
-            self.refresh_tasks_treeview()
-            self.task_manager.save_tasks()
+        selected_task = self.tasks_treeview.selection()
+        if not selected_task:
+            messagebox.showinfo("Information", "Please select a task to delete its category.")
+            return
+
+        task_name = self.tasks_treeview.item(selected_task)["values"][0]
+        for task in self.task_manager.tasks:
+            if task.name == task_name:
+                task.category = "Default"  
+        self.refresh_tasks_treeview()
+        self.task_manager.save_tasks()
+
 
             
     def search_tasks(self):
@@ -318,16 +352,20 @@ class TaskManagerApp:
                 self.tasks_treeview.insert("", tk.END, values=(task.name, task.priority, task.status, task.category), tags=(tag,))
                 
     def change_category(self):
-        selected_task_id = self.tasks_treeview.selection()[0]
-        if selected_task_id:
-            task_name = self.tasks_treeview.item(selected_task_id)["values"][0]
-            new_category = simpledialog.askstring('Change category', 'New category name:')
-            if new_category:
-                for task in self.task_manager.tasks:
-                    if task.name == task_name:
-                        task.category = new_category
-                self.refresh_tasks_treeview()
-                self.task_manager.save_tasks()
+        selected_task = self.tasks_treeview.selection()
+        if not selected_task:
+            messagebox.showinfo("Information", "Please select a task to change its category.")
+            return
+
+        task_name = self.tasks_treeview.item(selected_task)["values"][0]
+        new_category = simpledialog.askstring('Change category', 'New category name:')
+        if new_category:
+            for task in self.task_manager.tasks:
+                if task.name == task_name:
+                    task.category = new_category
+            self.refresh_tasks_treeview()
+            self.task_manager.save_tasks()
+            self.task_manager.save_tasks()
 
     def search_in_categories(self):
         search_query = self.search_category_entry.get().lower()
