@@ -87,8 +87,10 @@ class TaskManagerApp:
     def __init__(self, username):
         self.username = username  
         self.task_manager = TaskManager(self.username)
-        self.root = tk.Tk()
-        self.root.title("To-Do-Maker")
+        if __name__ == "__main__":
+            self.root = tk.Tk()
+            self.root.title("To-Do-Maker")
+       
 
         left_frame  =  ttk.LabelFrame(self.root,  width=300,  height=600)
         left_frame.pack(side='left',  fill='both',  padx=10,  pady=5,  expand=True)
@@ -232,13 +234,15 @@ class TaskManagerApp:
             self.tasks_treeview.insert("", tk.END, values=(task.name, task.priority, task.status, task.category), tags=(tag,))  # Kategorie hinzufügen
             
     def run(self):
-        self.tasks_treeview.heading("#1", text="Task", command=lambda: self.sort_by_task(self.tasks_treeview, "#1", False))
-        self.tasks_treeview.heading("#2", text="Priority", command=lambda: self.sort_by_priority(self.tasks_treeview, "#2", False))
-        self.tasks_treeview.heading("#3", text="Status", command=lambda: self.sort_by_status(self.tasks_treeview, "#3", False))
-        self.tasks_treeview.heading("#4", text="Category", command=lambda: self.sort_by_category(self.tasks_treeview, "#4", False))
+        # Only call mainloop when executed directly
+        if __name__ == "__main__":
+            self.tasks_treeview.heading("#1", text="Task", command=lambda: self.sort_by_task(self.tasks_treeview, "#1", False))
+            self.tasks_treeview.heading("#2", text="Priority", command=lambda: self.sort_by_priority(self.tasks_treeview, "#2", False))
+            self.tasks_treeview.heading("#3", text="Status", command=lambda: self.sort_by_status(self.tasks_treeview, "#3", False))
+            self.tasks_treeview.heading("#4", text="Category", command=lambda: self.sort_by_category(self.tasks_treeview, "#4", False))
 
-        self.refresh_tasks_treeview()  
-        self.root.mainloop()
+            self.refresh_tasks_treeview()  
+            self.root.mainloop()
         
     def sort_by_task(self, tv, col, reverse):
         self.reset_heading_text(tv)
@@ -415,22 +419,23 @@ def check_credentials():
         messagebox.showerror("Error", "Please register first.")
 
 
-window = tk.Tk()
-window.title("Login-Fenster")
+if __name__ == "__main__":
+    window = tk.Tk()
+    window.title("Login-Fenster")
 
-label_username = ttk.Label(window, text="Username:",)
-label_password = ttk.Label(window, text="Password:")
-entry_username = ttk.Entry(window)
-entry_password = ttk.Entry(window, show="*")
-button_login = ttk.Button(window, text="Login", command=check_credentials)
-button_register = ttk.Button(window, text="Register", command=register)
+    label_username = ttk.Label(window, text="Username:",)
+    label_password = ttk.Label(window, text="Password:")
+    entry_username = ttk.Entry(window)
+    entry_password = ttk.Entry(window, show="*")
+    button_login = ttk.Button(window, text="Login", command=check_credentials)
+    button_register = ttk.Button(window, text="Register", command=register)
 
-label_username.grid(row=0, column=0, sticky=tk.W,padx=5)
-entry_username.grid(row=0, column=1)    
-label_password.grid(row=1, column=0, sticky=tk.W,padx=5)
-entry_password.grid(row=1, column=1)
-button_login.grid(row=2, column=1, pady=10)
-button_register.grid(row=2, column=0, pady=10, padx=30)
+    label_username.grid(row=0, column=0, sticky=tk.W,padx=5)
+    entry_username.grid(row=0, column=1)    
+    label_password.grid(row=1, column=0, sticky=tk.W,padx=5)
+    entry_password.grid(row=1, column=1)
+    button_login.grid(row=2, column=1, pady=10)
+    button_register.grid(row=2, column=0, pady=10, padx=30)
+    window.mainloop()
 
-window.mainloop()
 
