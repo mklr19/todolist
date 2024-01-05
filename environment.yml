@@ -1,0 +1,8 @@
+name: my_environment  # Der Name Ihrer Conda-Umgebung
+
+channels:
+  - defaults
+  - conda-forge  # Optional, Sie können zusätzliche Conda-Kanäle hinzufügen
+
+dependencies:
+  - pytest       
